@@ -1,0 +1,692 @@
+{
+  "name": "n8n_travel_plan",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "travel",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        380,
+        -240
+      ],
+      "id": "aae78386-22cc-455c-922a-d6af23e55289",
+      "name": "Webhook",
+      "webhookId": "ffbafba0-1974-498d-8052-63bf419da16b"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        3520,
+        -20
+      ],
+      "id": "f60654e9-2f0f-4d87-86b9-ada6c30e39fd",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "19b37b57-9ea9-4f0b-bb86-4dea09a7643c",
+              "name": "origin",
+              "value": "={{ $json.body.origin }}",
+              "type": "string"
+            },
+            {
+              "id": "f7ec7aff-78bd-4402-b461-aef34464be26",
+              "name": "destination",
+              "value": "={{ $json.body.destination }}",
+              "type": "string"
+            },
+            {
+              "id": "e7399be4-dc4d-4e5c-9d6d-0a2fe8da792c",
+              "name": "departure_date",
+              "value": "={{ $json.body.departure_date }}",
+              "type": "string"
+            },
+            {
+              "id": "c50f0e50-700b-48a5-9cc2-346cf9690159",
+              "name": "return_date",
+              "value": "={{ $json.body.return_date }}",
+              "type": "string"
+            },
+            {
+              "id": "3a7c6510-f4ef-45e9-964a-247585dd8e43",
+              "name": "travelers",
+              "value": "={{ $json.body.travelers }}",
+              "type": "string"
+            },
+            {
+              "id": "6ba801ab-4a58-4b4f-8553-4e8cdbf8abff",
+              "name": "email",
+              "value": "=yaseen.hadba11@gmail.com",
+              "type": "string"
+            },
+            {
+              "id": "37c9940a-0483-401f-8771-3b163d15864a",
+              "name": "activities",
+              "value": "={{ $json.body.activities }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        300,
+        20
+      ],
+      "id": "69cf7604-89b8-4900-ae6e-44a6ed50c0a1",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=origin:{{ $json.origin }}\ndestination:{{ $json.destination }}\ndeparture_date:{{ $json.departure_date }}\nreturn_date:{{ $json.return_date }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Turn the origin and destination into their airport code format\n\nMake sure the departure date and return date are in the future. not the past \n\nHere is the current date {{ $now }}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        440,
+        0
+      ],
+      "id": "c8baf394-93b0-4ade-9412-6203c7e8e28c",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        400,
+        260
+      ],
+      "id": "c06fdea8-2376-4a69-b739-391a315f708d",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "UkktTnpXcLFJNV38",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n\t\t\"origin\": {\n\t\t\t\"type\": \"string\",\n            \"description\":\"The origin\"\n\t\t},\n\t\t\"destination\": {\n\t\t\t\"type\": \"string\",\n\t\t\t\"description\":\"The destination\" \n\t\t\t},\n      \"departure\":{\n        \"type\":\"string\",\n        \"format\":\"date\",\n        \"description\":\"The departure date (YYYY-MM-DD)\"\n      },\n      \"return\": {\n\t\t\t\"type\": \"string\",\n\t\t\t\"description\":\"The returns date (YYYY-MM-DD)\" \n\t\t\t}\n    },\n      \"required\":[\"origin\",\"destination\",\"departure\",\"return\"]\n\t}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        620,
+        260
+      ],
+      "id": "c012695c-cc52-4f49-ba3a-2c8b574b53d4",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"{{ $('Edit Fields').item.json.activities }} in {{ $json.output.destination }}\",\n  \"auto_parameters\": false,\n  \"topic\": \"general\",\n  \"search_depth\": \"basic\",\n  \"chunks_per_source\": 3,\n  \"max_results\": 3,\n  \"time_range\": null,\n  \"days\": 7,\n  \"include_answer\": true,\n  \"include_raw_content\": true,\n  \"include_images\": false,\n  \"include_image_descriptions\": false,\n  \"include_domains\": [],\n  \"exclude_domains\": [],\n  \"country\": null\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        0
+      ],
+      "id": "3c1a308f-9813-4f4c-a73b-8cea867fe5a2",
+      "name": "activities",
+      "credentials": {
+        "httpCustomAuth": {
+          "id": "Yh5dw59H1IhcketK",
+          "name": "tavily"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "google_hotels"
+            },
+            {
+              "name": "q",
+              "value": "=hotels in {{ $('Edit Fields').item.json.destination }}"
+            },
+            {
+              "name": "check_in_date",
+              "value": "={{ $('Basic LLM Chain').item.json.output.departure }}"
+            },
+            {
+              "name": "check_out_date",
+              "value": "={{ $('Basic LLM Chain').item.json.output.return }}"
+            },
+            {
+              "name": " adults",
+              "value": "={{ $('Edit Fields').item.json.travelers }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1240,
+        0
+      ],
+      "id": "9f634c24-5657-42d7-ba52-d0042e09cc5a",
+      "name": "resorts",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "0ZcVyRKbVgaJsdJw",
+          "name": "serpapi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "google_flights"
+            },
+            {
+              "name": "departure_id",
+              "value": "={{ $('Basic LLM Chain').item.json.output.origin }}"
+            },
+            {
+              "name": "arrival_id",
+              "value": "={{ $('Basic LLM Chain').item.json.output.destination }}"
+            },
+            {
+              "name": "outbound_date",
+              "value": "={{ $('Basic LLM Chain').item.json.output.departure }}"
+            },
+            {
+              "name": "return_date",
+              "value": "={{ $('Basic LLM Chain').item.json.output.return }}"
+            },
+            {
+              "name": " adults",
+              "value": "={{ $('Edit Fields').item.json.travelers }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1680,
+        0
+      ],
+      "id": "5fd7dfd5-21f3-43b4-9f6d-1424c8036105",
+      "name": "Flights",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "0ZcVyRKbVgaJsdJw",
+          "name": "serpapi"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Below is structured information about a user's travel plan. Using this, generate a valid JSON object with keys \"subject\" and \"emailBody\". \"emailBody\" must be in HTML format. Do not include explanations or formatting outside the JSON object.\n\nTrip Details:\nFrom: {{ $('Edit Fields').item.json.origin }}\nTo: {{ $('Edit Fields').item.json.destination }}\nDeparture Date: {{ $('Basic LLM Chain').item.json.output.departure }}\nReturn Date: {{ $('Basic LLM Chain').item.json.output.return }}\n\n<h2>Flights</h2>\n{{ $json.flightsBlock }}\n\n<h2>Resorts</h2>\n{{ $('Resort info').item.json.resortBlock }}\n\n<h2>Activities</h2>\n{{ $('Activities Info').item.json.activitiesBlock }}\n\nPlease return a JSON with \"subject\" and \"emailBody\", where the emailBody uses proper HTML structure and headings. No markdown or explanation. Just JSON.\n",
+        "options": {
+          "systemMessage": "=# Overview\nYou are an expert email writer specializing in creating travel plans. Your job is to return a JSON object with two keys: \"subject\" and \"emailBody\". The \"emailBody\" must be in **HTML format** and suitable for email use.\n\n# Output Requirements\nReturn **only** a valid JSON object like this:\n\n{\n  \"subject\": \"Your travel to Paris from July 1 to July 7\",\n  \"emailBody\": \"<html>...</html>\"\n}\n\n⚠️ Do not output anything outside of this JSON format. No introductions, no explanations and - Do NOT wrap the JSON in ``` code fences. Output plain JSON only.\n only a JSON object.\n\n# Email Sections\nBreak the email body into these sections, using headers (<h2>) and horizontal lines (<hr>):\n\n1. **Introduction**\n   - Get the traveler excited.\n   - Add <hr> at the end.\n\n2. **Flights**\n   - List departure/return dates and locations.\n   - Show details of each flight.\n   - Add <hr> at the end.\n\n3. **Resorts**\n   - Use numbered list.\n   - Each resort name should be a clickable link.\n   - Add image using this format:\n     \nhtml\n     <img src='{url}' style='max-width:20%; height:auto;'><br>\n\n   - Add <hr> at the end.\n\n4. **Activities**\n   - List activities with clickable links as names.\n   - Add brief description per activity.\n   - Add <hr> at the end.\n\n5. **Signoff**\n   - Friendly message.\n   - Signed as **Yaseen Travel Team**\n\n# Word Limit\nDo not exceed 1000 words."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        0
+      ],
+      "id": "7579b13e-7d98-4de7-befb-ea55dbdf369a",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2340,
+        260
+      ],
+      "id": "e10dd6c4-0b4d-4680-a07b-b7b8851fb7d9",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "UkktTnpXcLFJNV38",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "yaseen.hadba11@gmail.com",
+        "subject": "={{ $json.Subject }}",
+        "message": "={{ $json.emailBody }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        3240,
+        -20
+      ],
+      "id": "8533c64e-6d9d-4b66-833c-232b747febb5",
+      "name": "Gmail",
+      "webhookId": "74755175-68cc-4d26-abb9-6f87e877ff48",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ooaFKOoZ1NqWnVlH",
+          "name": "003"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "efdf6f32-bbd5-4d2d-b30b-74864f66d0ec",
+              "name": "Subject",
+              "value": "={{ $json.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "4e12c60f-4af6-4000-9e90-c6cebe2df47f",
+              "name": "emailBody",
+              "value": "={{ $json.emailBody }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2900,
+        -20
+      ],
+      "id": "b4b1236e-cb15-4388-9f5b-287b9505f15d",
+      "name": "flatten Email"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse the JSON string returned by the AI Agent\nconst parsed = JSON.parse($input.first().json.output);\n\n// Forward clean keys for Gmail\nreturn [\n  {\n    json: {\n      subject: parsed.subject,\n      emailBody: parsed.emailBody\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2680,
+        -20
+      ],
+      "id": "ca00a59e-0da4-45ff-ad78-5463c6e45de9",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Access the SerpAPI response coming from the Flights node\n// ▼ helper to pretty-print minutes → \"2h 15m\"\nfunction fmtMins(mins) {\n  const h = Math.floor(mins / 60);\n  const m = mins % 60;\n  return `${h}h ${m}m`;\n}\n\n// Safely take the three best options\nconst best = $input.first().json.best_flights?.slice(0, 3) || [];\n\nlet block = '';\n\nbest.forEach((opt, i) => {\n  const price = opt.price ? `$${opt.price}` : 'N/A';\n  const totalDur = fmtMins($input.first().json.best_flights[0].total_duration)\n\n  block += `${i + 1}) ${price}, total ${totalDur}\\n`;\n\n  const legs = opt.flights || [];\n  legs.forEach((leg, idx) => {\n    const segLine =\n      `${leg.airline}  |  ` +\n      `${leg.departure_airport.time} ${leg.departure_airport.id}` +\n      ` → ${leg.arrival_airport.time} ${leg.arrival_airport.id}  |  ` +\n      `${leg.duration}`;\n    block += `   • Segment ${idx + 1}: ${segLine}\\n`;\n  });\n\n  if (legs.length > 1) {\n    block += `   • ${legs.length - 1} connection${legs.length - 1 > 1 ? 's' : ''}\\n`;\n  }\n  block += '\\n';\n});\n\n// Return one clean item with the formatted block\nreturn [\n  {\n    json: {\n      flightsBlock: block.trim()\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1900,
+        0
+      ],
+      "id": "5f0aaee0-8442-424f-8c1c-c5c3d26f392b",
+      "name": "flight"
+    },
+    {
+      "parameters": {
+        "jsCode": "const resorts =$input.first().json.properties || [];\n\nif (!resorts.length) {\n  return [{ json: { resortBlock: 'No resorts found for this destination.' } }];\n}\n\nlet html = '';\n\nresorts.slice(0, 3).forEach((resort, i) => {\n  const name = resort.name || `Resort ${i + 1}`;\n  const link = resort.link || '#';\n  const image = resort.images?.[0]?.original_image || '';\n  const rateNight = resort.rate_per_night?.lowest || 'N/A';\n  const totalRate = resort.total_rate?.lowest || 'N/A';\n  const nearby = resort.nearby_places?.[0]?.name || 'N/A';\n  const nearbyTime = resort.nearby_places?.[0]?.transportations?.[0]?.duration || '?';\n  const nearbyType = resort.nearby_places?.[0]?.transportations?.[0]?.type || '';\n  const amenities = (resort.amenities || []).join(', ') || 'No amenities listed';\n\n  html += `\n  ${i + 1}) <a href=\"${link}\">${name}</a><br>\n  <img src=\"${image}\" style=\"max-width:20%; height:auto;\"><br>\n  Rate per night: $${rateNight}<br>\n  Total rate: $${totalRate}<br>\n  Nearby: ${nearby} (${nearbyTime}, ${nearbyType})<br>\n  Amenities: ${amenities}<br><br>\n  `;\n});\n\nreturn [{ json: { resortBlock: html.trim() } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1460,
+        0
+      ],
+      "id": "f7826017-cfe6-4fc4-a021-cc8a3c16772c",
+      "name": "Resort info"
+    },
+    {
+      "parameters": {
+        "jsCode": "const results =$input.first().json.results|| [];\n\nconst lines = results.slice(0, 3).map(a => {\n  if (a.title && a.url) {\n    return `- <a href=\"${a.url}\">${a.title}</a>`;\n  }\n  return '';\n}).filter(Boolean);\n\nconst block = lines.length > 0\n  ? lines.join('<br>\\n')\n  : 'No relevant activities found.';\n\nreturn [{ json: { activitiesBlock: block } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1020,
+        0
+      ],
+      "id": "68e0f8ba-789c-48cb-888a-3dccb5ef6e0d",
+      "name": "Activities Info"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "yaseenhadba.app.n8n.cloud",
+            "user-agent": "Python/3.12 aiohttp/3.11.16",
+            "content-length": "231",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "34.59.11.47",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "US",
+            "cf-ray": "9549d916936cae13-ORD",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "34.59.11.47, 172.69.6.167",
+            "x-forwarded-host": "yaseenhadba.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-21-5c9df84b57-rc7hn",
+            "x-is-trusted": "yes",
+            "x-real-ip": "34.59.11.47"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "return_date": "July seventeenth",
+            "departure_date": "July tenth",
+            "activities": "historical places and fun activities",
+            "destination": "Istanbul",
+            "travelers": "one",
+            "origin": "Israel",
+            "email": "yassin.hadbyrivin at gmail.com"
+          },
+          "webhookUrl": "https://yaseenhadba.app.n8n.cloud/webhook-test/travel",
+          "executionMode": "test"
+        }
+      }
+    ],
+    "activities": [
+      {
+        "json": {
+          "query": "historical places and fun activities in IST",
+          "follow_up_questions": null,
+          "answer": "Visit Sultanahmet Square and the Hagia Sophia for historical sites. Enjoy the Tünel Funicular for a fun ride. Dine at a rooftop restaurant for a memorable experience.",
+          "images": [],
+          "results": [
+            {
+              "title": "Top 15 Historical Places of Istanbul that you won't want to miss",
+              "url": "https://instanbul.com/top-historical-places-of-istanbul/",
+              "content": "Best of Historical Places in Istanbul. Istanbul is home to many historical structures such as city walls, cisterns, churches, mosques, cisterns, fortresses, towers, underground cities and many historical sites belonging to different periods and civilizations. 1. Sultanahmet Square - Hippodrome of Constantinople",
+              "score": 0.7279179,
+              "raw_content": "![Logo](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTc4IiB2aWV3Qm94PSIwIDAgMjAwIDE3OCI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgc3R5bGU9ImZpbGw6I2NmZDRkYjtmaWxsLW9wYWNpdHk6IDAuMTsiLz48L3N2Zz4=)\n![Logo](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTc4IiB2aWV3Qm94PSIwIDAgMjAwIDE3OCI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgc3R5bGU9ImZpbGw6I2NmZDRkYjtmaWxsLW9wYWNpdHk6IDAuMTsiLz48L3N2Zz4=)\n![Logo](https://instanbul.com/wp-content/uploads/2022/05/instanbul-logo.png)\n![Logo](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTc4IiB2aWV3Qm94PSIwIDAgMjAwIDE3OCI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgc3R5bGU9ImZpbGw6I2NmZDRkYjtmaWxsLW9wYWNpdHk6IDAuMTsiLz48L3N2Zz4=)\n\n# Top 15 Historical Places of Istanbul that you won’t want to miss\n\n![](https://instanbul.com/wp-content/uploads/2022/06/historical-places-istanbul-696x464.jpg.webp \"historical-places-istanbul\")\n\nIstanbul is home to many historical places that are worth exploring for tourists and locals alike. From ancient Roman ruins to magnificent Ottoman palaces, Istanbul has it all. If you want to take a more historical route during your Istanbul visit, don’t miss out on locations like the Hagia Sophia, Topkapi Palace, Blue Mosque, and many others. Check out these **must-see historical sites and places in Istanbul**.\n\nTable of Contents\n\n## **Best of Historical Places in Istanbul**\n\nIstanbul is home to many historical structures such as city walls, cisterns, churches, mosques, cisterns, fortresses, towers, underground cities and many historical sites belonging to different periods and civilizations.\n\n### **1. Sultanahmet Square – Hippodrome of Constantinople**\n\n**Sultanahmet Square**, also known as the **Hippodrome of Constantinople**, is one of the most historic locations and squares in Istanbul. This is a site that has been important for centuries, serving as the chariot racing grounds for the Byzantine Empire. Today, visitors can explore the square and take in its magnificent monuments and architecture.\n\n[![](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNDQwIiBoZWlnaHQ9IjEwNjkiIHZpZXdCb3g9IjAgMCAxNDQwIDEwNjkiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHN0eWxlPSJmaWxsOiNjZmQ0ZGI7ZmlsbC1vcGFjaXR5OiAwLjE7Ii8+PC9zdmc+)](https://instanbul.com/sultanahmet-square-hippodrome-istanbul/)\n\n![](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNDQwIiBoZWlnaHQ9IjEwNjkiIHZpZXdCb3g9IjAgMCAxNDQwIDEwNjkiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHN0eWxlPSJmaWxsOiNjZmQ0ZGI7ZmlsbC1vcGFjaXR5OiAwLjE7Ii8+PC9zdmc+)\n\nSultanahmet Square is surrounded by the world famous sights of [**Hagia Sophia Grand Mosque**](https://instanbul.com/hagia-sophia-istanbul/), **Museum of Turkish and Islamic Arts** and the **Blue Mosque**. It should be on the top of your list of places to visit in Istanbul.\n\n[**Visit Sultanahmet Square**](https://instanbul.com/sultanahmet-square-hippodrome-istanbul/)\n\n### **2. Hagia Sophia**\n\n[**Hagia Sophia**](https://instanbul.com/hagia-sophia-istanbul/), also known as the Church of the Holy Wisdom or the Church of the Divine Wisdom, is an ancient Byzantine church in Istanbul and one of the world’s great greatest architectural works, as well as accepted as the 8th wonder of the world.\n\n![](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjkyNSIgdmlld0JveD0iMCAwIDE2MDAgOTI1Ij48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBzdHlsZT0iZmlsbDojY2ZkNGRiO2ZpbGwtb3BhY2l0eTogMC4xOyIvPjwvc3ZnPg==)\n\nBeing converted into a mosque by Fatih Sultan Mehmet after Istanbul’s conquest in 1453, it was than converted to a museum in 1935 and finally in 2020 it was declared as a mosque. The magnificent architecture and stunning mosaics inside make it a must-visit spot.\n\n[**Visit Hagia Sophia**](https://instanbul.com/hagia-sophia-istanbul/)\n\n### **3. Topkapi Palace**\n\n[**Topkapi Palace**](https://instanbul.com/topkapi-palace-museum-istanbul/) is one of the most visited sights in Istanbul, as well as the richest museums in the world. The palace is a must-see destination for anyone interested in Turkish history and culture, offering a glimpse into the opulence and grandeur of the Ottoman Empire. Topkapi Palace was the home of the Ottoman sultans for almost 400 years. The palace is now a museum that displays Ottoman artifacts, including weapons, ceramics, and textiles.\n\n![](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjEwNjciIHZpZXdCb3g9IjAgMCAxNjAwIDEwNjciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHN0eWxlPSJmaWxsOiNjZmQ0ZGI7ZmlsbC1vcGFjaXR5OiAwLjE7Ii8+PC9zdmc+)\n\nAmong them is one of the world’s largest diamonds, the most precious Islamic relics, a map with the earliest portrayal of America, high-quality Chinese porcelain, rare Islamic gilded miniatures, and calligraphy examples from numerous Muslim Asian empires. The artifacts are a sight to behold.\n\n[**Visit Topkapi Palace Museum**](https://instanbul.com/topkapi-palace-museum-istanbul/)\n\n### **4. Sultanahmet Blue Mosque**\n\nThe [**Sultanahmet Blue Mosque**](https://instanbul.com/sultanahmet-blue-mosque-istanbul/) is one of the most important mosques in Istanbul that was built with the order of Sultan Ahmed I at the beginning of the 17th century during the Ottoman period. The mosque is a unique structure that has brought a new perspective to mosque culture which showcases one of the most successful examples of Turkish-Islamic architecture.\n\n![](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjEyMDAiIHZpZXdCb3g9IjAgMCAxNjAwIDEyMDAiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHN0eWxlPSJmaWxsOiNjZmQ0ZGI7ZmlsbC1vcGFjaXR5OiAwLjE7Ii8+PC9zdmc+)\n\nThe mosque’s interior walls are adorned with hand-painted blue tiles, and at night, the mosque is bathed in blue as lights frame the mosque’s five main domes, six minarets, and eight secondary domes.\n\n[**Visit Blue Mosque**](https://instanbul.com/sultanahmet-blue-mosque-istanbul/)\n\n### **5. Galata Tower**\n\nThe [**Galata Tower**](https://instanbul.com/galata-tower-istanbul/) is undoubtedly one of the most famous monuments in Istanbul, providing the most spectacular views of the whole city. It offers stunning views over the entire Istanbul peninsula and its surrounds and is located at the confluence of the **Bosphorus** and the **Golden Horn**.\n\n![](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjExOTgiIHZpZXdCb3g9IjAgMCAxNjAwIDExOTgiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHN0eWxlPSJmaWxsOiNjZmQ0ZGI7ZmlsbC1vcGFjaXR5OiAwLjE7Ii8+PC9zdmc+)\n\nIt is also one of Istanbul’s most prominent attractions, overlooking **Galata** and **Karakoy** from its perch. Its brilliant lights can be seen from all across the city at night.\n\n[**Visit Galata Tower**](https://instanbul.com/galata-tower-istanbul/)\n\n### **6. Basilica Cistern**\n\nThe [**Basilica Cistern**](https://instanbul.com/basilica-cistern-istanbul/), also known as the **Yerebatan Sarnıcı**, is one of Istanbul’s most unique and atmospheric historical sites. Located underground, beneath the city’s bustling streets, the Basilica Cistern is an ancient water reservoir that has been transformed into a museum, displaying a fascinating combination of engineering, art, and history.\n\n![](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjEwNjUiIHZpZXdCb3g9IjAgMCAxNjAwIDEwNjUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHN0eWxlPSJmaWxsOiNjZmQ0ZGI7ZmlsbC1vcGFjaXR5OiAwLjE7Ii8+PC9zdmc+)\n\nConstructed in the 6th century during the reign of Byzantine Emperor Justinian I, the cistern was used to store water for the city’s needs. It was built to supply water to the Great Palace of Constantinople and other important buildings in the city. Over the centuries, the cistern fell into disrepair and was forgotten, until it was rediscovered by a group of European travelers in the 16th century.\n\nToday, visitors can explore the cistern’s eerie chambers, which are illuminated by dim lighting and the reflections of the water that still fills the underground reservoir. The cistern is supported by a forest of 336 marble columns, many of which were salvaged from ancient structures around the empire, creating a unique patchwork of architectural styles. Visitors can also see the Medusa heads, two carved marble heads that were likely taken from a Roman-era building and used as column bases in the cistern.\n\n[**Visit Basilica Cistern**](https://instanbul.com/basilica-cistern-istanbul/)\n\n### **7. Istanbul Archaeology Museums**\n\n[**Istanbul Archaeology Museums**](https://instanbul.com/istanbul-archaeology-museums/) is a museum complex and considered to be among the top 10 historical museums in the world. It is one of the largest and most important museums in Turkey, and is home to a vast collection of artifacts dating back to various periods of human history.\n\nThe museums consists of three main museums that include; the **Archaeology Museum**, the **Museum of the Ancient Orient** and the **Tiled Pavilion**. And so general name is called “museums”.\n\n[![](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjEwNjciIHZpZXdCb3g9IjAgMCAxNjAwIDEwNjciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHN0eWxlPSJmaWxsOiNjZmQ0ZGI7ZmlsbC1vcGFjaXR5OiAwLjE7Ii8+PC9zdmc+)](https://instanbul.com/istanbul-archaeology-museums/)\n\n![](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjEwNjciIHZpZXdCb3g9IjAgMCAxNjAwIDEwNjciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHN0eWxlPSJmaWxsOiNjZmQ0ZGI7ZmlsbC1vcGFjaXR5OiAwLjE7Ii8+PC9zdmc+)\n\nThe Archaeological Museum features artifacts from the Paleolithic era up until the Ottoman Empire, including pottery, statues, coins, and jewelry. The Museum of the Ancient Orient is dedicated to artifacts from the ancient civilizations of Mesopotamia, Egypt, and Anatolia. The Tiled Kiosk Museum showcases a collection of Ottoman ceramics and tiles.\n\nSome of the most famous artifacts on display at the Istanbul Archaeology Museums include the sarcophagus of Alexander the Great, the Treaty of Kadesh, and the oldest known peace treaty in the world. The museum complex is also home to several important Islamic artifacts, including a collection of early Qurans and calligraphy.\n\nVisitors can expect to see a wide variety of artifacts from different eras and civilizations, providing a fascinating glimpse into the rich and diverse history of Istanbul and Turkey.\n\n[**Visit Istanbul Archaeology Museums**](https://instanbul.com/istanbul-archaeology-museums/)\n\n### **8. Maiden’s Tower**\n\nThe [**Maiden’s Tower**](https://instanbul.com/maidens-tower-istanbul/), also known as **Kız Kulesi** in Turkish, is a unique and historic tower located on a small islet at the entrance of the [**Bosphorus Strait**](https://instanbul.com/the-bosphorus-strait-istanbul/) in Istanbul. It is probably one of the most world-renowned and historical sights of Istanbul. A must-see place for travelers coming to Istanbul.\n\n![](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjEwNjciIHZpZXdCb3g9IjAgMCAxNjAwIDEwNjciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHN0eWxlPSJmaWxsOiNjZmQ0ZGI7ZmlsbC1vcGFjaXR5OiAwLjE7Ii8+PC9zdmc+)\n\nDuring the Roman, Byzantine and Ottoman periods, the island where the tower is situated was used for surveillance and base purposes, as well as various towers were built. The building, which was used by the military to control maritime traffic during the Republican period, has undergone various renovations. Today, it serves as a restaurant and museum for its visitors upon its restoration process. Various events are also held at the tower.\n\n[**Find out more on Maiden’s Tower**](https://instanbul.com/maidens-tower-istanbul/)\n\n### **9. Dolmabahce Palace**\n\n[**Dolmabahce Palace**](https://instanbul.com/dolmabahce-palace-museum-istanbul/) is one of the most spectacular palaces in Besiktas, located on the shores of the Bosphorus. It is a grand and opulent palace that once served as the main administrative center of the Ottoman Empire. It was also home to six sultans and their families.\n\n![](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjEwNjciIHZpZXdCb3g9IjAgMCAxNjAwIDEwNjciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHN0eWxlPSJmaWxsOiNjZmQ0ZGI7ZmlsbC1vcGFjaXR5OiAwLjE7Ii8+PC9zdmc+)\n\nBuilt in the mid-19th century, the palace is a stunning example of Ottoman architecture and design, with lavish interiors, sprawling gardens, and an impressive collection of art and artifacts.\n\nToday, the Dolmabahce Palace Museum is a popular tourist destination, offering visitors a glimpse into the lavish lifestyle of Ottoman royalty and a fascinating insight into Turkey’s rich cultural heritage. The palace’s interior reflects the grandeur of the era and is created in the style of opulent European palaces.\n\n[**Visit Dolmabahce Palace Museum**](https://instanbul.com/dolmabahce-palace-museum-istanbul/)\n\n### **10. Grand Bazaar (Kapalicarsi)**\n\nThe **[Grand Bazaar](https://instanbul.com/grand-bazaar-kapalicarsi-istanbul/) (Kapalicarsi)** is one of the largest and oldest covered markets in the world (550 years old). With more than 60 streets and over 4,000 shops, it is a shopper’s paradise and a must-visit destination for anyone traveling to Istanbul. The covered bazaar attracts between 250,000 and 400,000 visitors every day.\n\n![](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjEwNjciIHZpZXdCb3g9IjAgMCAxNjAwIDEwNjciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHN0eWxlPSJmaWxsOiNjZmQ0ZGI7ZmlsbC1vcGFjaXR5OiAwLjE7Ii8+PC9zdmc+)\n\nThe market was designed to serve as the center of trade and commerce for the Ottoman Empire, and was also an important hub for international trade between Asia and Europe. With 91,250,000 annual visitors, it was also ranked first and widely regarded as one of the world’s most important shopping destinations. You are able to find carpets, rugs, souvenirs, spices, jewelry and many other products.\n\n[**Find out more on Grand Bazaar**](https://instanbul.com/grand-bazaar-kapalicarsi-istanbul/)\n\n### **11. Rumeli Fortress**\n\n[**Rumeli Fortress**](https://instanbul.com/rumeli-fortress-rumelihisari-istanbul/) (Rumelihisari) is an impressive fortress located in the European side of Istanbul, along the Bosphorus Strait. Built in the 15th century by Ottoman Sultan Mehmed II, the fortress is one of the most iconic landmarks in the city.\n\n![](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9Ijc3NSIgdmlld0JveD0iMCAwIDE2MDAgNzc1Ij48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBzdHlsZT0iZmlsbDojY2ZkNGRiO2ZpbGwtb3BhY2l0eTogMC4xOyIvPjwvc3ZnPg==)\n\nToday, the Rumeli Fortress Museum showcases the history and architecture of the Ottoman Empire. It is a remarkable example of military architecture with its strategic location, double walls, and towers. The fortress is surrounded by a picturesque park and offers stunning views of the Bosphorus Strait and the surrounding area.\n\n[**Visit Rumeli Fortress**](https://instanbul.com/rumeli-fortress-rumelihisari-istanbul/)\n\n### **12. Egyptian Spice Bazaar**\n\nThe [**Egyptian Spice Bazaar**](https://instanbul.com/the-spice-market-egyptian-spice-bazaar-istanbul/), also known as the **Spice Market** or **Misir Carsisi** in Turkish, is one of Istanbul’s oldest and most popular bazaars. It is located in the **Eminonu** district of Istanbul, near the New Mosque and the Galata Bridge.\n\n[![](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjEwNjciIHZpZXdCb3g9IjAgMCAxNjAwIDEwNjciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHN0eWxlPSJmaWxsOiNjZmQ0ZGI7ZmlsbC1vcGFjaXR5OiAwLjE7Ii8+PC9zdmc+)](https://instanbul.com/the-spice-market-egyptian-spice-bazaar-istanbul/)\n\n![](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjEwNjciIHZpZXdCb3g9IjAgMCAxNjAwIDEwNjciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHN0eWxlPSJmaWxsOiNjZmQ0ZGI7ZmlsbC1vcGFjaXR5OiAwLjE7Ii8+PC9zdmc+)\n\nThe bazaar was built in the 1660s as part of the New Mosque complex, which was commissioned by Sultan Mehmed IV. Its purpose was to provide income for the mosque’s upkeep and to help support the city’s poor. In the past, this place used to be a huge shopping center where products from all over the world meet with buyers. Later on, it took its current name due to the sale of products brought from Egypt.\n\nToday, it continues to be an important hub for local traders and tourists alike, with a wide variety of spices, dried fruits, nuts, teas, and other Turkish delicacies on offer.\n\n[**Find out more on Spice Market**](https://instanbul.com/the-spice-market-egyptian-spice-bazaar-istanbul/)\n\n### **13. Suleymaniye Mosque**\n\nThe [**Suleymaniye Mosque**](https://instanbul.com/suleymaniye-mosque-istanbul/) is one of the most magnificent mosques in Istanbul. It was commissioned by the Ottoman sultan Suleiman the Magnificent and designed by the famous architect Mimar Sinan between the years 1551 and 1557. The mosque is an impressive example of Ottoman architecture and remains an important religious and cultural center in the city.\n\n[![](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjEwNjciIHZpZXdCb3g9IjAgMCAxNjAwIDEwNjciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHN0eWxlPSJmaWxsOiNjZmQ0ZGI7ZmlsbC1vcGFjaXR5OiAwLjE7Ii8+PC9zdmc+)](https://instanbul.com/suleymaniye-mosque-istanbul/)\n\n![](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjEwNjciIHZpZXdCb3g9IjAgMCAxNjAwIDEwNjciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHN0eWxlPSJmaWxsOiNjZmQ0ZGI7ZmlsbC1vcGFjaXR5OiAwLjE7Ii8+PC9zdmc+)\n\nThe mosque is situated on a hilltop overlooking the Golden Horn, and its imposing structure dominates the skyline of the city. It is known for its grandeur and exquisite design, featuring intricate tilework, ornate calligraphy, and beautiful stained glass windows. The mosque’s large central dome is flanked by four smaller domes and four towering minarets.\n\nAside from the mosque itself, visitors can explore the surrounding complex which includes a hospital, school, and hamam. The tombs of Suleiman the Magnificent, Hurrem Sultan and Mimar Sinan are in the complex, which makes the site a must-see stop for anyone interested in Ottoman and Islamic history.\n\n[**Visit Suleymaniye Mosque**](https://instanbul.com/suleymaniye-mosque-istanbul/)\n\n### **14. Pierre Loti Hill & Café**\n\nLocated in the **Eyup** district of Istanbul, [**Pierre Loti Hill**](https://instanbul.com/pierre-loti-hill-cafe-istanbul/) and its **Cafe** is a famous hilltop that offers an enchanting view of the city. One of the best places to enjoy a panoramic views of **Istanbul**. The hill is named after the famous French writer and adventurer Pierre Loti, who fell in love with Istanbul and often visited the hill to enjoy the view.\n\n![](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjEwNjciIHZpZXdCb3g9IjAgMCAxNjAwIDEwNjciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHN0eWxlPSJmaWxsOiNjZmQ0ZGI7ZmlsbC1vcGFjaXR5OiAwLjE7Ii8+PC9zdmc+)\n\nPierre Loti Hill offers stunning panoramic views of Istanbul and the Golden Horn. The entire Golden Horn can be seen clearly from the hill. You can explore the hilltop park and enjoy a cup of traditional Turkish tea or Turkish coffee. The café features a large terrace with comfortable seating areas that provide the perfect spot to sit back, relax, and take in the breathtaking views.\n\nSo, if you are just in Istanbul for a few days, you might want to reconsider going there for tea or Turkish coffee.\n\n[**Find out more on Pierre Loti Hill & Cafe**](https://instanbul.com/pierre-loti-hill-cafe-istanbul/)\n\n### **15. Saint Antoine Catholic Church**\n\n[**Saint Antoine Catholic Church**](https://instanbul.com/saint-antoine-catholic-church-istanbul/), also known as St. Anthony of Padua or Sant’Antonio di Padova, is one of the most impressive historical churches in Istanbul. Located on the famous Istiklal Street, the church has the distinction of being the largest Roman Catholic Church in the city.\n\n[![](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjEwNjgiIHZpZXdCb3g9IjAgMCAxNjAwIDEwNjgiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHN0eWxlPSJmaWxsOiNjZmQ0ZGI7ZmlsbC1vcGFjaXR5OiAwLjE7Ii8+PC9zdmc+)](https://instanbul.com/saint-antoine-catholic-church-istanbul/)\n\n![](data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjEwNjgiIHZpZXdCb3g9IjAgMCAxNjAwIDEwNjgiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHN0eWxlPSJmaWxsOiNjZmQ0ZGI7ZmlsbC1vcGFjaXR5OiAwLjE7Ii8+PC9zdmc+)\n\nBeing one of the Catholic churches of the Franciscans, St. Antuan is the last of the churches built in Europe to represent the apostles of Jesus Christ. It was built to serve the Italian community living in Istanbul.\n\nSt. Anthony’s Church attracts its visitors with a secret motive with its monumental architecture and silence. Built by an architect named Mongeri, this temple in the Italian gothic style attracts a lot of attention from tourists especially because of its icons adorning its showcases, impressive stained glass and its doors being open to visitors all day long.\n\nThe church is an important religious haunt around the world. In addition, Luigi Bresciani’s gilded wooden statue of St.Anthony, as well as many art works are a must see. The church has a very important place in the Catholic world and in 2003 Pope XXIII. John also preached in this church during his visit to Istanbul.\n\n[**Visit St. Anthony of Padua Church**](https://instanbul.com/saint-antoine-catholic-church-istanbul/)\n\n### **Tour Booking Advice**\n\n*This post may contain affiliate links. If you make a purchase using one of these links, we may receive commission at no extra cost to you. Please refer to our [disclosure](https://instanbul.com/privacy-policy/) here for more information.*\n\n### Related Posts\n\n### [Hagia Sophia Tickets & Guide: Our Best Tips for Your Visit](https://instanbul.com/hagia-sophia-istanbul/ \"Hagia Sophia Tickets & Guide: Our Best Tips for Your Visit\")\n\n### [Basilica Cistern Istanbul Tickets & Guide: Our Tips for Your Visit](https://instanbul.com/basilica-cistern-istanbul/ \"Basilica Cistern Istanbul Tickets & Guide: Our Tips for Your Visit\")\n\n### [Topkapi Palace Tickets & Guide: Our Best Tips for Your Visit](https://instanbul.com/topkapi-palace-museum-istanbul/ \"Topkapi Palace Tickets & Guide: Our Best Tips for Your Visit\")\n\n![Logo](https://instanbul.com/wp-content/uploads/2022/05/instanbul-logo.png)\n\n© 1998-2025 instanbul.com - Your Best Istanbul Travel Guide.\n  \n  \ninstanbul.com is a privately owned brand. It has no connection with any civic organization.\n\n**[About](https://instanbul.com/about/)** | **[Privacy & Cookie Policy](https://instanbul.com/privacy-policy/)** | **[Contact](https://instanbul.com/contact-us/)**\n\nThis website uses cookies to ensure you get the best experience on our website  \nGot it!"
+            },
+            {
+              "title": "25 Best & Fun Things To Do In Istanbul - The Tourist Checklist",
+              "url": "https://thetouristchecklist.com/things-to-do-in-istanbul/",
+              "content": "Taking the Tünel Funicular is a fun addition to your Istanbul itinerary. It provides a blend of history and convenience, making travel around the city easy and enjoyable. Address: Tünel, 34425 Beyoğlu, Istanbul. 21. Eat at a rooftop restaurant. Dining at a rooftop restaurant in Istanbul is an unforgettable experience.",
+              "score": 0.6867278,
+              "raw_content": null
+            },
+            {
+              "title": "44 Fun Things to Do in Istanbul - Our Escape Clause",
+              "url": "https://www.ourescapeclause.com/fun-things-to-do-in-istanbul/",
+              "content": "From its compelling (and lengthy) history to its thriving culture to its delicious food and its distinct neighborhoods, Istanbul is completely addictive-and there is definitely no shortage of fun things to do in Istanbul. Whether you're a history buff, a foodie, an architecture lover, or simply a traveler who loves to meander through",
+              "score": 0.6711479,
+              "raw_content": null
+            }
+          ],
+          "response_time": 3.32
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "activities",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "activities": {
+      "main": [
+        [
+          {
+            "node": "Activities Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "resorts": {
+      "main": [
+        [
+          {
+            "node": "Resort info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flights": {
+      "main": [
+        [
+          {
+            "node": "flight",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "flatten Email": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "flatten Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "flight": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resort info": {
+      "main": [
+        [
+          {
+            "node": "Flights",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Activities Info": {
+      "main": [
+        [
+          {
+            "node": "resorts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "acfa4258-1e4c-4b72-b869-08e789e8911c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "60f86486b8e833c6fb193b7d896530d3002c805d57690091b2f2c0904cdaa289"
+  },
+  "id": "Fc0G4aOyeZ0PAGQp",
+  "tags": []
+}

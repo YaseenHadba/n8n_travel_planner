@@ -22,8 +22,9 @@ This project is a smart travel planning workflow built using [n8n](https://n8n.i
 ---
 
 
-📸 Output Example
+##📸 Output Example 
 Section	Preview
+
 ✈️ Flights	3 options with airline, times, duration, connections
 🏨 Resorts	Linked names, images, price per night, nearby places
 🎯 Activities	Clickable names, short descriptions
